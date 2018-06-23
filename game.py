@@ -108,15 +108,16 @@ class Game(object):
             )
 
     def draw_board(self):
-        for y, row in enumerate(self.board):
-            for x, grid in enumerate(row):
+        for y in range(self.board.size):
+            for x in range(self.board.size):
                 rect = pygame.Rect(
                     x * (self.grid_size + self.margin),
                     TOOLBAR_HEIGHT + y * (self.grid_size + self.margin),
                     self.grid_size,
                     self.grid_size,
                 )
-                pygame.draw.rect(self.window, self.color_mapping[grid], rect)
+                value = self.board._state[y*self.board.size + x]
+                pygame.draw.rect(self.window, self.color_mapping[value], rect)
 
         if self.board.is_over:
             self._draw_game_over()

@@ -1,21 +1,29 @@
-from copy import deepcopy, copy
-
+import math
 import numpy as np
+
+from copy import deepcopy, copy
 
 RED_PLAYER = 1
 GREEN_PLAYER = -1
+
+
+def _get(state, x, y):
+    l = int(math.sqrt(len(state)))
+    return state[y*l + x]
 
 
 class StrategoBoard(object):
     current_player = RED_PLAYER
     score_red = 0
     score_green = 0
+    is_over = False
 
     def __init__(self, size=5, state=None):
+        self.size = size
         if state:
             self._state = state
         else:
-            self._state = [[0 for _ in range(size)] for _ in range(size)]
+            self._state = [0 for _ in range(size**2)]
 
     def __iter__(self):
         for i in self._state:
@@ -25,7 +33,10 @@ class StrategoBoard(object):
         id_self = id(self)
         _copy = memo.get(id_self)
         if _copy is None:
-            _copy = StrategoBoard(state=deepcopy(self._state))
+            _copy = StrategoBoard(
+                state=copy(self._state),
+                size=self.size
+            )
             _copy.current_player = self.current_player
             _copy.score_red = self.score_red
             _copy.score_green = self.score_green
@@ -35,12 +46,14 @@ class StrategoBoard(object):
         assert player in (RED_PLAYER, GREEN_PLAYER), "Unknown player."
         return self.score_red if player == RED_PLAYER else self.score_green
 
-    def set_score(self, player, value):
+    def set_score(self, player, value, place):
         assert player in (RED_PLAYER, GREEN_PLAYER), "Unknown player."
         if player == RED_PLAYER:
             self.score_red += value
         else:
             self.score_green += value
+
+        # print("Added {} points for player {} with {}".format(value, player, place))
 
     @property
     def winner(self):
@@ -55,9 +68,9 @@ class StrategoBoard(object):
     def get_moves(self):
         return [
             (x,y)
-            for y, row in enumerate(self._state)
-            for x, grid in enumerate(row)
-            if grid == 0
+            for y in range(self.size)
+            for x in range(self.size)
+            if self._state[y*self.size + x] == 0
         ]
 
     def peek_move(self, coors):
@@ -72,39 +85,38 @@ class StrategoBoard(object):
             self._update_score(x, y)
             self._switch_player()
 
-    @property
-    def is_over(self):
-        return not bool(self.get_moves())
+        self.is_over = not bool(self.get_moves())
 
     def _is_available_tick(self, x, y):
-        return self._state[y][x] == 0
+        return self._state[y*self.size + x] == 0
 
     def _tick_the_box(self, x, y):
-        self._state[y][x] = self.current_player
+        self._state[y*self.size + x] = self.current_player
 
     def _update_score(self, x, y):
-        board_size = len(self._state)
+        board_size = self.size
         matrix = np.array(self._state)
+        matrix.shape = (self.size, self.size)
 
         # add row sum
-        current_row = self._state[y]
+        current_row = self._state[y*self.size:self.size+(y*self.size)]
         if not current_row.count(0):
-            self.set_score(self.current_player, board_size)
+            self.set_score(self.current_player, board_size, 'row')
 
         # add column sum
-        current_col = [self._state[_y][x] for _y in range(board_size)]
+        current_col = [self._state[_y*self.size] for _y in range(board_size)]
         if not current_col.count(0):
-            self.set_score(self.current_player, board_size)
+            self.set_score(self.current_player, board_size, 'col')
 
         # add first diagonal sum
         positive_diagonal = matrix[::-1, :].diagonal(-board_size + 1 + x + y).tolist()
         if not positive_diagonal.count(0):
-            self.set_score(self.current_player, len(positive_diagonal))
+            self.set_score(self.current_player, len(positive_diagonal), 'diag_pos')
 
         # add second diagonal sum
         negative_diagonal = matrix.diagonal(x - y).tolist()
         if not negative_diagonal.count(0):
-            self.set_score(self.current_player, len(negative_diagonal))
+            self.set_score(self.current_player, len(negative_diagonal), 'diag_neg')
 
         # print(
         #     "Current row: {}\n"
@@ -125,6 +137,7 @@ class StrategoBoard(object):
         dimensions = []
 
         matrix = np.array(self._state)
+        matrix.shape = (self.size, self.size)
 
         # add rows
         dimensions.extend(matrix.tolist())

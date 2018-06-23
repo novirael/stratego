@@ -21,21 +21,22 @@ if __name__ == "__main__":
     parser.add_argument('mode', type=str, choices=[
         PLAYER_VS_PLAYER, PLAYER_VS_BOT, BOT_VS_BOT, TEST_MODE])
     parser.add_argument("--board_size", type=int, default=5)
+    parser.add_argument("--games", type=int, default=3)
 
     args = parser.parse_args()
 
     if args.mode == PLAYER_VS_PLAYER:
-        game = PVPGame(board_size=3)
+        game = PVPGame(board_size=args.board_size)
     elif args.mode == PLAYER_VS_BOT:
-        game = PVBGame(board_size=4, bot_agent=AgentJonh())
+        game = PVBGame(board_size=args.board_size, bot_agent=AgentJonh())
     elif args.mode == BOT_VS_BOT:
         game = BVBGame(
-            board_size=5,
-            agent_alice=AgentRandom(),
+            board_size=args.board_size,
+            agent_alice=AgentMerlin(depth=5),
             agent_bob=AgentJonh(depth=5)
         )
     elif args.mode == TEST_MODE:
-        test(args.board_size)
+        test(args.board_size, args.games)
         sys.exit()
 
     running = True
