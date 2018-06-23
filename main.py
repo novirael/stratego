@@ -3,6 +3,7 @@ import argparse
 
 import sys
 
+from agents.fullstack import AgentFullStack
 from agents.john import AgentJonh
 from agents.merlin import AgentMerlin
 from agents.rand import AgentRandom
@@ -28,7 +29,7 @@ if __name__ == "__main__":
     if args.mode == PLAYER_VS_PLAYER:
         game = PVPGame(board_size=args.board_size)
     elif args.mode == PLAYER_VS_BOT:
-        game = PVBGame(board_size=args.board_size, bot_agent=AgentJonh())
+        game = PVBGame(board_size=args.board_size, bot_agent=AgentFullStack())
     elif args.mode == BOT_VS_BOT:
         game = BVBGame(
             board_size=args.board_size,
